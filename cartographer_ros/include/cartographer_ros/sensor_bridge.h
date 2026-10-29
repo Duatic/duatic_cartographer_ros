@@ -79,10 +79,21 @@ class SensorBridge {
       const std::string& sensor_id, ::cartographer::common::Time start_time,
       const std::string& frame_id,
       const ::cartographer::sensor::PointCloudWithIntensities& points);
+  /**
+   * @brief Passes one batch of rangefinder points, with their intensities, to
+   * the trajectory builder in the tracking frame.
+   * @param sensor_id Sensor the points come from.
+   * @param time Time of the last point; point times are relative to it.
+   * @param frame_id Frame the points are given in.
+   * @param ranges Points, the last one at time 0.
+   * @param intensities Intensity of each point, parallel to 'ranges'.
+   * @note Drops the batch if 'frame_id' has no transform to the tracking frame.
+   */
   void HandleRangefinder(const std::string& sensor_id,
                          ::cartographer::common::Time time,
                          const std::string& frame_id,
-                         const ::cartographer::sensor::TimedPointCloud& ranges);
+                         const ::cartographer::sensor::TimedPointCloud& ranges,
+                         const std::vector<float>& intensities);
 
   const int num_subdivisions_per_laser_scan_;
   std::map<std::string, cartographer::common::Time>
