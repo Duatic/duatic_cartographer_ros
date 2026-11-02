@@ -176,7 +176,8 @@ void SensorBridge::HandlePointCloud2Message(
   carto::sensor::PointCloudWithIntensities point_cloud;
   carto::common::Time time;
   std::tie(point_cloud, time) = ToPointCloudWithIntensities(*msg);
-  HandleRangefinder(sensor_id, time, msg->header.frame_id, point_cloud.points);
+  HandleRangefinder(sensor_id, time, msg->header.frame_id, point_cloud.points,
+                    point_cloud.intensities);
 }
 
 const TfBridge& SensorBridge::tf_bridge() const { return tf_bridge_; }
@@ -189,6 +190,7 @@ void SensorBridge::HandleLaserScan(
     return;
   }
   CHECK_LE(points.points.back().time, 0.f);
+  CHECK_EQ(points.intensities.size(), points.points.size());
   // TODO(gaschler): Use per-point time instead of subdivisions.
   for (int i = 0; i != num_subdivisions_per_laser_scan_; ++i) {
     const size_t start_index =
@@ -219,20 +221,20 @@ void SensorBridge::HandleLaserScan(
       point.time -= time_to_subdivision_end;
     }
     CHECK_EQ(subdivision.back().time, 0.f);
-    HandleRangefinder(sensor_id, subdivision_time, frame_id, subdivision);
+    HandleRangefinder(
+        sensor_id, subdivision_time, frame_id, subdivision,
+        std::vector<float>(points.intensities.begin() + start_index,
+                           points.intensities.begin() + end_index));
   }
 }
 
 void SensorBridge::HandleRangefinder(
     const std::string& sensor_id, const carto::common::Time time,
-    const std::string& frame_id, const carto::sensor::TimedPointCloud& ranges) {
+    const std::string& frame_id, const carto::sensor::TimedPointCloud& ranges,
+    const std::vector<float>& intensities) {
   if (!ranges.empty()) {
     CHECK_LE(ranges.back().time, 0.f);
   }
-
-  // This was added to get rid of the TimedPointCloudData warning for a missing argument
-  std::vector<float> intensities_;
-
   const auto sensor_to_tracking =
       tf_bridge_.LookupToTracking(time, CheckNoLeadingSlash(frame_id));
   if (sensor_to_tracking != nullptr) {
@@ -240,7 +242,8 @@ void SensorBridge::HandleRangefinder(
         sensor_id, carto::sensor::TimedPointCloudData{
                        time, sensor_to_tracking->translation().cast<float>(),
                        carto::sensor::TransformTimedPointCloud(
-                           ranges, sensor_to_tracking->cast<float>()), intensities_});
+                           ranges, sensor_to_tracking->cast<float>()),
+                       intensities});
   }
 }
 
