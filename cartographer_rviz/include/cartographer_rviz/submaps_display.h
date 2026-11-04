@@ -17,6 +17,7 @@
 #ifndef CARTOGRAPHER_RVIZ_SRC_SUBMAPS_DISPLAY_H_
 #define CARTOGRAPHER_RVIZ_SRC_SUBMAPS_DISPLAY_H_
 
+#include <chrono>
 #include <map>
 #include <memory>
 #include <string>
@@ -86,7 +87,11 @@ class SubmapsDisplay
   void reset() override;
   void processMessage(
         const ::cartographer_ros_msgs::msg::SubmapList::ConstSharedPtr msg) override;
+#ifdef CARTOGRAPHER_RVIZ_CHRONO_UPDATE
+  void update(std::chrono::nanoseconds, std::chrono::nanoseconds) override;
+#else
   void update(float , float) override;
+#endif
 
   std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
@@ -97,7 +102,7 @@ class SubmapsDisplay
   std::unique_ptr<std::string> map_frame_;
   ::rviz_common::properties::StringProperty* tracking_frame_property_;
   Ogre::SceneNode* map_node_ = nullptr;  // Represents the map frame.
-  std::map<int, std::unique_ptr<Trajectory>> trajectories_ GUARDED_BY(mutex_);
+  std::map<int, std::unique_ptr<Trajectory>> trajectories_ ABSL_GUARDED_BY(mutex_);
   absl::Mutex mutex_;
   ::rviz_common::properties::BoolProperty* slice_high_resolution_enabled_;
   ::rviz_common::properties::BoolProperty* slice_low_resolution_enabled_;

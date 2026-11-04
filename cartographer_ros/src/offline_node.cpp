@@ -31,6 +31,9 @@
 #include "gflags/gflags.h"
 #include "rosgraph_msgs/msg/clock.hpp"
 #include "tf2_ros/static_transform_broadcaster.h"
+#if __has_include("tf2_ros/version.h")
+#include "tf2_ros/version.h"
+#endif
 #ifdef USE_URDF_H_FILES
 #include "urdf/model.h"
 #else
@@ -152,7 +155,12 @@ void RunOfflineNode(const MapBuilderFactory& map_builder_factory,
       std::make_shared<tf2_ros::Buffer>(
         cartographer_offline_node->get_clock(),
         tf2::durationFromSec(10),
+// tf2_ros 0.45 takes the node by reference; older releases may lack version.h.
+#if defined(TF2_ROS_VERSION_MAJOR) && (TF2_ROS_VERSION_MAJOR > 0 || TF2_ROS_VERSION_MINOR >= 45)
+        *cartographer_offline_node);
+#else
         cartographer_offline_node);
+#endif
 
   std::vector<geometry_msgs::msg::TransformStamped> urdf_transforms;
 
@@ -182,7 +190,7 @@ void RunOfflineNode(const MapBuilderFactory& map_builder_factory,
       cartographer_offline_node->create_publisher<tf2_msgs::msg::TFMessage>(
           kTfTopic, kLatestOnlyPublisherQueueSize);
 
-  ::tf2_ros::StaticTransformBroadcaster static_tf_broadcaster(cartographer_offline_node);
+  ::tf2_ros::StaticTransformBroadcaster static_tf_broadcaster(*cartographer_offline_node);
 
   rclcpp::Publisher<rosgraph_msgs::msg::Clock>::SharedPtr clock_publisher =
       cartographer_offline_node->create_publisher<rosgraph_msgs::msg::Clock>(

@@ -96,7 +96,7 @@ Node::Node(
     : node_options_(node_options)
 {
   node_ = node;
-  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_) ;
+  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(*node_) ;
   map_builder_bridge_.reset(new cartographer_ros::MapBuilderBridge(node_options_, std::move(map_builder), tf_buffer.get()));
 
   absl::MutexLock lock(&mutex_);
