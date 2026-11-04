@@ -36,6 +36,7 @@ option(BUILD_GRPC "build features that require Cartographer gRPC support" false)
 google_initialize_cartographer_project()
 
 find_package(absl REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 find_package(cartographer_ros REQUIRED)
 find_package(cartographer_ros_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -76,8 +77,13 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
   tf2_ros::tf2_ros
 )
 target_link_libraries(${PROJECT_NAME} PRIVATE
+  ament_index_cpp::ament_index_cpp
   pluginlib::pluginlib
 )
+# rviz_common 15.1.8 replaced Display::update(float, float) with a std::chrono overload.
+if(rviz_common_VERSION VERSION_GREATER_EQUAL 15.1.8)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC CARTOGRAPHER_RVIZ_CHRONO_UPDATE)
+endif()
 
 pluginlib_export_plugin_description_file(rviz_common rviz_plugin_description.xml)
 register_rviz_ogre_media_exports(DIRECTORIES "ogre_media/materials/glsl120" "ogre_media/materials/scripts")

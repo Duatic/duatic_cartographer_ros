@@ -32,7 +32,7 @@
 #include <rviz_common/properties/bool_property.hpp>
 #include <rviz_common/properties/string_property.hpp>
 #include <rviz_common/message_filter_display.hpp>
-#include <ament_index_cpp/get_package_share_directory.hpp>
+#include <ament_index_cpp/get_package_share_path.hpp>
 
 namespace cartographer_rviz {
 
@@ -91,7 +91,7 @@ SubmapsDisplay::SubmapsDisplay() : rclcpp::Node("submaps_display") {
                                 "Distance in meters in z-direction beyond "
                                 "which submaps will start to fade out.",
                                 this);
-  const std::string package_path = ament_index_cpp::get_package_share_directory("cartographer_rviz");
+  const std::string package_path = ament_index_cpp::get_package_share_path("cartographer_rviz").string();
   Ogre::ResourceGroupManager::getSingleton().addResourceLocation(
       package_path + kMaterialsDirectory, "FileSystem", "cartographer_rviz");
   Ogre::ResourceGroupManager::getSingleton().addResourceLocation(
@@ -227,7 +227,11 @@ void SubmapsDisplay::processMessage( const ::cartographer_ros_msgs::msg::SubmapL
   }
 }
 
+#ifdef CARTOGRAPHER_RVIZ_CHRONO_UPDATE
+void SubmapsDisplay::update(std::chrono::nanoseconds, std::chrono::nanoseconds) {
+#else
 void SubmapsDisplay::update(const float , const float) {
+#endif
   absl::MutexLock locker(&mutex_);
   // Schedule fetching of new submap textures.
   for (const auto& trajectory_by_id : trajectories_) {
