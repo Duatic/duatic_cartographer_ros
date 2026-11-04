@@ -22,6 +22,9 @@
 #include "gflags/gflags.h"
 #include "rclcpp/rclcpp.hpp"
 #include "tf2_ros/transform_listener.h"
+#if __has_include("tf2_ros/version.h")
+#include "tf2_ros/version.h"
+#endif
 
 DEFINE_bool(collect_metrics, false,
             "Activates the collection of runtime metrics. If activated, the "
@@ -56,7 +59,12 @@ void Run() {
       std::make_shared<tf2_ros::Buffer>(
         cartographer_node->get_clock(),
         tf2::durationFromSec(kTfBufferCacheTimeInSeconds),
+// tf2_ros 0.45 takes the node by reference; older releases may lack version.h.
+#if defined(TF2_ROS_VERSION_MAJOR) && (TF2_ROS_VERSION_MAJOR > 0 || TF2_ROS_VERSION_MINOR >= 45)
+        *cartographer_node);
+#else
         cartographer_node);
+#endif
 
   std::shared_ptr<tf2_ros::TransformListener> tf_listener =
       std::make_shared<tf2_ros::TransformListener>(*tf_buffer);
